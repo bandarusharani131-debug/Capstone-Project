@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexisCommerce | Modern Architectural Capstone</title>
+    <style>
+        :root {
+            --bg-base: #0b0f19;
+            --bg-surface: #151d30;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* App Shell Layout */
+        header {
+            background: rgba(21, 29, 48, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active { color: var(--text-main); }
+
+        .cart-indicator {
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.6rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            font-weight: bold;
+        }
+
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* View Content Styling */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+
+        .image-wrapper {
+            aspect-ratio: 4/3;
+            background: #1e293b;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .product-image.loaded { opacity: 1; }
+
+        .image-placeholder {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .product-info {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .product-title { font-size: 1.2rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .product-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.4; }
+        
+        .card-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: var(--primary-hover); }
+
+        /* Cart View Layout */
+        .cart-wrapper { background: var(--bg-surface); padding: 2rem; border-radius: 16px; border: 1px solid var(--border-color); }
+        .cart-title { margin-bottom: 1.5rem; font-size: 1.8rem; }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .cart-item:last-child { border: none; }
+        .cart-total-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 2px dashed var(--border-color); }
+        
+        .empty-message { text-align: center; color: var(--text-muted); padding: 3rem 0; }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="nav-container">
+            <a href="/" class="logo" data-link>NEXIS//SHOP</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link" data-link>Products</a>
+                <a href="/cart" class="nav-link" data-link>
+                    Cart <span id="global-cart-count" class="cart-indicator">0</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main id="app-viewport"></main>
+
+    <footer>
+        &copy; 2026 NexisCommerce Edge Engine. Architecture Verified.
+    </footer>
+
+    <script>
+        /**
+         * GLOBAL CENTRALIZED STATE MANAGER (STORE PATTERN)
+         * Implements a simple reactive Pub/Sub design variant.
+         */
+        class GlobalStore {
+            constructor() {
+                this._state = {
+                    cart: JSON.parse(localStorage.getItem('nexis_cart')) || [],
+                    products: [
+                        { id: "p1", title: "Quantum Matrix Core", price: 299, desc: "High-density neural rendering element optimal for variable cloud computing arrays.", img: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80" },
+                        { id: "p2", title: "Synapse Interface Grid", price: 850, desc: "Direct tactile feedback optimization grid calibrated for telemetry compilation layers.", img: "https://images.unsplash.com/photo-1591405351990-4726e331f121?auto=format&fit=crop&w=600&q=80" },
+                        { id: "p3", title: "Vortex Node Terminal", price: 120, desc: "Encrypted perimeter node processing data loops through localized isolation channels.", img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=600&q=80" }
+                    ]
+                };
+                this._subscribers = [];
+            }
+
+            getState() { return this._state; }
+
+            subscribe(callback) {
+                this._subscribers.push(callback);
+                return () => { this._subscribers = this._subscribers.filter(sub => sub !== callback); };
+            }
+
+            _emit() {
+                this._subscribers.forEach(callback => callback(this._state));
+                localStorage.setItem('nexis_cart', JSON.stringify(this._state.cart));
+            }
+
+            dispatch(action, payload) {
+                switch(action) {
+                    case 'ADD_TO_CART':
+                        const existingItem = this._state.cart.find(item => item.id === payload.id);
+                        if (existingItem) {
+                            existingItem.quantity += 1;
+                        } else {
+                            this._state.cart.push({ ...payload, quantity: 1 });
+                        }
+                        break;
+                    case 'REMOVE_FROM_CART':
+                        this._state.cart = this._state.cart.filter(item => item.id !== payload);
+                        break;
+                }
+                this._emit();
+            }
+        }
+
+        const store = new GlobalStore();
+
+        /**
+         * CLIENT-SIDE DECLARATIVE ROUTER ENGINE
+         */
+        class ClientRouter {
+            constructor(routes, viewport) {
+                this.routes = routes;
+                this.viewport = viewport;
+                this.init();
+            }
+
+            init() {
+                // Intercept anchor clicks tagged with the [data-link] attribute
+                document.body.addEventListener('click', e => {
+                    const targetLink = e.target.closest('[data-link]');
+                    if (targetLink) {
+                        e.preventDefault();
+                        this.navigateTo(targetLink.getAttribute('href'));
+                    }
+                });
+
+                // Listen to native history manipulation controls
+                window.addEventListener('popstate', () => this.resolveRoute());
+                this.resolveRoute();
+            }
+
+            navigateTo(url) {
+                history.pushState(null, null, url);
+                this.resolveRoute();
+            }
+
+            resolveRoute() {
+                const currentPath = window.location.pathname;
+                let targetRoute = this.routes.find(route => route.path === currentPath);
+                
+                // Fallback catch-all to baseline index routing paths
+                if (!targetRoute) targetRoute = this.routes[0];
+
+                this.updateNavHighlight(currentPath);
+                
+                // Initialize modern Component Framework Instance lifecycle 
+                const activeViewInstance = new targetRoute.view(this.viewport);
+                activeViewInstance.render();
+            }
+
+            updateNavHighlight(path) {
+                document.querySelectorAll('[data-link]').forEach(link => {
+                    link.getAttribute('href') === path 
+                        ? link.classList.add('active') 
+                        : link.classList.remove('active');
+                });
+            }
+        }
+
+        /**
+         * ABSTRACT UI VIEW ELEMENT COMPONENT
+         */
+        class AbstractViewComponent {
+            constructor(container) {
+                this.container = container;
+                this.unsubscribeState = store.subscribe(() => this.render());
+            }
+            // Interface hooks standardizing implementation pipelines
+            render() {}
+            cleanup() { this.unsubscribeState(); }
+        }
+
+        /**
+         * SYSTEM PRODUCT VIEW VIEW COMPONENT
+         */
+        class ProductCatalogView extends AbstractViewComponent {
+            render() {
+                const { products } = store.getState();
+                
+                this.container.innerHTML = `
+                    <h2 style="margin-bottom: 2rem; font-weight: 700;">Engine Components Catalogue</h2>
+                    <div class="catalog-grid" id="catalog-mounting-grid">
+                        ${products.map(product => `
+                            <article class="product-card">
+                                <div class="image-wrapper">
+                                    <div class="image-placeholder"></div>
+                                    <img data-src="${product.img}" alt="${product.title}" class="product-image">
+                                </div>
+                                <div class="product-info">
+                                    <h3 class="product-title">${product.title}</h3>
+                                    <p class="product-desc">${product.desc}</p>
+                                    <div class="card-footer">
+                                        <span class="price">$${product.price}</span>
+                                        <button class="btn-add-cart" data-id="${product.id}">Add to Core</button>
+                                    </div>
+                                </div>
+                            </article>
+                        `).join('')}
+                    </div>
+                `;
+
+                this.bindInteractions(products);
+                this.initializeLazyLoading();
+            }
+
+            bindInteractions(products) {
+                this.container.querySelector('#catalog-mounting-grid').addEventListener('click', e => {
+                    const actionBtn = e.target.closest('.btn-add-cart');
+                    if (!actionBtn) return;
+                    
+                    const productId = actionBtn.dataset.id;
+                    const referenceProduct = products.find(p => p.id === productId);
+                    if (referenceProduct) {
+                        store.dispatch('ADD_TO_CART', referenceProduct);
+                    }
+                });
+            }
+
+            initializeLazyLoading() {
+                const targetedImages = this.container.querySelectorAll('.product-image');
+                
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        
+                        const img = entry.target;
+                        const placeholder = img.previousElementSibling;
+                        
+                        img.src = img.dataset.src;
+                        img.addEventListener('load', () => {
+                            img.classList.add('loaded');
+                            if(placeholder) placeholder.style.display = 'none';
+                        });
+
+                        observer.unobserve(img);
+                    });
+                }, { rootMargin: '0px 0px 50px 0px' });
+
+                targetedImages.forEach(image => imageObserver.observe(image));
+            }
+        }
+
+        /**
+         * CART VIEW MANAGEMENT LAYERS
+         */
+        class CartView extends AbstractViewComponent {
+            render() {
+                const { cart } = store.getState();
+                const runningTotal = cart.reduce((accum, curr) => accum + (curr.price * curr.quantity), 0);
+
+                if (cart.length === 0) {
+                    this.container.innerHTML = `
+                        <div class="cart-wrapper">
+                            <h2 class="cart-title">Your Allocation Cart</h2>
+                            <div class="empty-message">No active systems or products registered inside local storage frames.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.container.innerHTML = `
+                    <div class="cart-wrapper">
+                        <h2 class="cart-title">Your Allocation Cart</h2>
+                        <div id="cart-items-wrapper">
+                            ${cart.map(item => `
+                                <div class="cart-item">
+                                    <div>
+                                        <h4>${item.title}</h4>
+                                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                                            $${item.price} &times; ${item.quantity}
+                                        </p>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 1.5rem;">
+                                        <span style="font-weight: bold; color: var(--accent);">$${item.price * item.quantity}</span>
+                                        <button class="btn-remove" data-id="${item.id}" style="background: #ef4444; padding: 0.5rem 0.75rem; font-size: 0.85rem;">Drop</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="cart-total-bar">
+                            <span style="font-size: 1.2rem; font-weight: 600; color: var(--text-muted);">Aggregated Net:</span>
+                            <span style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">$${runningTotal}</span>
+                        </div>
+                    </div>
+                `;
+                this.bindInteractions();
+            }
+
+            bindInteractions() {
+                this.container.querySelector('#cart-items-wrapper').addEventListener('click', e => {
+                    const removeBtn = e.target.closest('.btn-remove');
+                    if (removeBtn) {
+                        store.dispatch('REMOVE_FROM_CART', removeBtn.dataset.id);
+                    }
+                });
+            }
+        }
+
+        /**
+         * APP MASTER COORDINATION ORCHESTRATOR
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const viewportElement = document.getElementById('app-viewport');
+            const cartIndicatorBadge = document.getElementById('global-cart-count');
+
+            // Wire structural framework configuration vectors
+            const routesConfig = [
+                { path: '/', view: ProductCatalogView },
+                { path: '/cart', view: CartView }
+            ];
+
+            // Establish dynamic reactive monitoring over Global Cart quantities 
+            store.subscribe(({ cart }) => {
+                const unifiedCount = cart.reduce((acc, obj) => acc + obj.quantity, 0);
+                cartIndicatorBadge.textContent = unifiedCount;
+            });
+
+            // Trigger initial shell value recalculation pipeline
+            const initialCartState = store.getState().cart;
+            cartIndicatorBadge.textContent = initialCartState.reduce((acc, obj) => acc + obj.quantity, 0);
+
+            // Launch Single-Page Application engine instantiation 
+            window.AppRouterInstance = new ClientRouter(routesConfig, viewportElement);
+        });
+    </script>
+</body>
+</html>
